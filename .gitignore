@@ -1,0 +1,27 @@
+# VS Code
+.vscode/
+
+# Keil MDK-ARM build output
+MDK-ARM/Debug/
+MDK-ARM/Objects/
+MDK-ARM/Listings/
+MDK-ARM/RTE/
+MDK-ARM/DebugConfig/
+MDK-ARM/*.uvguix.*
+
+# Keil compilation artifacts
+*.map
+*.o
+*.d
+*.crf
+*.axf
+*.hex
+*.bin
+*.lst
+*.htm
+*.elf
+*.dep
+*.lnp
+*.iex
+*.sct
+*.i

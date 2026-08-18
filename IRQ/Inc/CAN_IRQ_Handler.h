@@ -4,6 +4,6 @@
 #include "main.h"
 #include "motor.h"
 
-extern DJMotor 
+extern DJMotor DJmotor[USE_DJNUM];
 
 #endif

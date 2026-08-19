@@ -4,8 +4,6 @@
 #include "main.h"
 #include <stdbool.h>
 #include <stdlib.h>
-#include "CAN_IRQ_Handler.h"
-#include "PID_Handler.h"
 
 typedef enum{
     DJ_Disable  = 0,  // 失能状态
@@ -110,9 +108,17 @@ typedef struct{
 #define GetSign(x) ((x > 0) - (x < 0))
 #define ClampPeak(raw, limit) if(raw > limit){raw = limit;}else if(raw < -limit){raw = -limit;}
 
-float PID_Init(PIDType *pid, float Kp, float Ki, float Kd, uint8_t mode);
+#include "PID_Handler.h"
+
+void PID_Init(PIDType *pid, float Kp, float Ki, float Kd, uint8_t mode);
 void DJmotor_Init(void);
 void DJmotor_AngleCalculate(DJMotorPointer motor);
+void DJmotor_Func(void);
+void DJmotor_SpeedMode(DJMotorPointer motor);
+void DJmotor_PositionMode(DJMotorPointer motor);
+void DJmotor_ZeroMode(DJMotorPointer motor);
+void DJmotor_SetZero(DJMotorPointer motor);
+int32_t Clamp(int32_t x, int32_t min, int32_t max);
 
 #if USE_DJ
     extern DJMotor DJmotor[USE_DJNUM];

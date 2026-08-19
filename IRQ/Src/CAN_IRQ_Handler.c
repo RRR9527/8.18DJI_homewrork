@@ -21,6 +21,8 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
         }
 
         DJMotorPointer motor = &DJmotor[card_id - 1U];
+        // motor->ID = card_id;
+        motor->Begin = true;
 
         motor->valNow.PulseRead = (int16_t)(((uint16_t)RxData[0] << 8) | RxData[1]);
         motor->valNow.speed_rpm = (int16_t)(((uint16_t)RxData[2] << 8) | RxData[3]);
@@ -39,6 +41,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
 
         motor->error.lastRxTime = 0;
         DJmotor_AngleCalculate(motor);
+        // DJmotor_Func();
     }
 }
 
@@ -53,6 +56,7 @@ void DJmotor_CurrentTransmit(DJMotorPointer motor){
     TxHeader.RTR = CAN_RTR_DATA;
     TxHeader.ExtId = 0;
     TxHeader.TransmitGlobalTime = DISABLE;
+    TxHeader.DLC = 8;
 
     if (motor->ID <= 4U){
         TxHeader.StdId = 0x200U;

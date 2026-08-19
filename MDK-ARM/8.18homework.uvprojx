@@ -10,6 +10,7 @@
       <TargetName>8.18homework</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
+      <pCCUsed>5060960::V5.06 update 7 (build 960)::.\ARMCC</pCCUsed>
       <uAC6>0</uAC6>
       <TargetOption>
         <TargetCommonOption>
@@ -562,6 +563,11 @@
               <FileName>CAN_IRQ_Handler.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\IRQ\Src\CAN_IRQ_Handler.c</FilePath>
+            </File>
+            <File>
+              <FileName>TIM_IRQ_Handler.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\IRQ\Src\TIM_IRQ_Handler.c</FilePath>
             </File>
           </Files>
         </Group>

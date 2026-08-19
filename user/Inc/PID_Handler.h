@@ -3,7 +3,7 @@
 
 #include "motor.h"
 
-float PID_Init(PIDType *pid, float Kp, float Ki, float Kd, uint8_t mode);
+void PID_Init(PIDType *pid, float Kp, float Ki, float Kd, uint8_t mode);
 float PID_calculate(PIDType *pid);
 void PID_Reset(PIDType *pid);
 

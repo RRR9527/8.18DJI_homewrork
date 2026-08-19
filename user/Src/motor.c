@@ -1,4 +1,5 @@
 #include "motor.h"
+#include "CAN_IRQ_Handler.h"
 
 DJMotor DJmotor[USE_DJNUM];
 
@@ -81,6 +82,18 @@ void DJmotor_Init(void){
     }
 }
 
+int32_t Clamp(int32_t x, int32_t min, int32_t max){
+    if (x > max){
+        return max;
+    }
+
+    if (x < min){
+        return min;
+    }
+
+    return x;
+}
+
 void DJmotor_AngleCalculate(DJMotorPointer motor){  // 注意，这里传入的是一个指针！！！
     motor->valNow.PulseGap = (int16_t)(motor->valNow.PulseRead - motor->valPre.PulseRead);
 
@@ -108,6 +121,21 @@ void DJmotor_AngleCalculate(DJMotorPointer motor){  // 注意，这里传入的�
     }
 
     motor->valPre = motor->valNow;
+}
+
+static void DJmotor_SwitchMode(DJMotorPointer motor){
+    if (motor->MODE_Set != motor->MODE_Cur){
+        motor->MODE_Cur = motor->MODE_Set;
+        motor->valSet.current_raw = 0;
+        motor->valSet.speed_rpm = 0;
+        motor->valSet.angle_deg = motor->valNow.angle_deg;
+        // 清除历史残值
+        PID_Reset(&motor->posPID);
+        PID_Reset(&motor->velPID);
+        motor->statusFlag.ZeroFlag = false;
+        motor->statusFlag.Overtimeflag = false;
+        motor->statusFlag.StuckFlag = false;
+    }
 }
 
 void DJmotor_Func(void){
@@ -143,30 +171,13 @@ void DJmotor_Func(void){
                     break;
                 }
 
-                defualt :{
+                default :{
                     break;
                 }
             }
         }else{
             DJmotor[i].valSet.current_raw = 0;
         }
-
-        DJmotor_CurrentTransmit(&DJmotor[i]);
-    }
-}
-
-static void DJmotor_SwitchMode(DJMotorPointer motor){
-    if (motor->MODE_Set != motor->MODE_Cur){
-        motor->MODE_Cur = motor->MODE_Set;
-        motor->valSet.current_raw = 0;
-        motor->valSet.speed_rpm = 0;
-        motor->valSet.angle_deg = motor->valNow.angle_deg;
-        // 清除历史残值
-        PID_Reset(&motor->posPID);
-        PID_Reset(&motor->velPID);
-        motor->statusFlag.ZeroFlag = false;
-        motor->statusFlag.Overtimeflag = false;
-        motor->statusFlag.StuckFlag = false;
     }
 }
 
@@ -248,6 +259,10 @@ void DJmotor_ZeroMode(DJMotorPointer motor){
 
 void DJmotor_SetZero(DJMotorPointer motor){
     motor->valNow.PulseTotal = 0;
+    motor->valPre.PulseTotal = 0;
+    motor->statusFlag.ZeroFlag = false;
+    motor->statusFlag.Overtimeflag = false;
+    motor->statusFlag.StuckFlag = false;
 }
 
 static void DJmotor_Monitor(DJMotorPointer motor){
@@ -270,16 +285,4 @@ static void DJmotor_Monitor(DJMotorPointer motor){
             motor->statusFlag.Overtimeflag = true;
         }
     }
-}
-
-int32_t Clamp(int32_t x, int32_t min, int32_t max){
-    if (x > max){
-        return max;
-    }
-
-    if (x < min){
-        return min;
-    }
-
-    return x;
 }

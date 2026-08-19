@@ -26,7 +26,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "motor.h"
+#include "TIM_IRQ_Handler.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -58,7 +58,7 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+extern DJMotor DJmotor[USE_DJNUM];
 /* USER CODE END 0 */
 
 /**
@@ -96,7 +96,11 @@ int main(void)
   MX_USART1_UART_Init();
   MX_CAN1_Init();
   /* USER CODE BEGIN 2 */
-
+  // for (uint8_t i = 0; i < USE_DJNUM; i++){
+  //   if (DJmotor[i].Begin){
+  //     DJmotor[i].MODE_Set = DJ_RPM;
+  //   }
+  // }
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -177,7 +181,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     HAL_IncTick();
   }
   /* USER CODE BEGIN Callback 1 */
-
+	TIM_PeriodElapsedCallback(htim);
   /* USER CODE END Callback 1 */
 }
 

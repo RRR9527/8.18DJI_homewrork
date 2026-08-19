@@ -63,7 +63,7 @@ typedef struct{
 typedef struct{
     /*同上一个结构体。我也不知道这些数据有多大*/
     int8_t lastRxTime;
-    int8_t stuckCount;
+    int16_t stuckCount;
     int16_t timeoutCount;
 } DJmotorError;  // 似乎是记录错误的。但我也不知道具体干嘛的
 
@@ -101,8 +101,8 @@ typedef struct{
 #define M2006_RATIO 36U
 #define M3508_RATIO 19U
 #define USE_DJNUM 8U  // 使用的电机的数量（假设一共八个2006和3508各4个）
-#define M2006_NUM 4U  // 2006型号
-#define M3508_NUM 4U  // 3508型号
+#define M2006_NUM 0  // 2006型号
+#define M3508_NUM 8U  // 3508型号
 #define Zero_Distance 10U
 
 #define GetSign(x) ((x > 0) - (x < 0))

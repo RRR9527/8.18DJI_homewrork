@@ -58,9 +58,9 @@ void DJmotor_Init(void){
         DJmotor[i].limit = limit;
         DJmotor[i].argum = argum;
         DJmotor[i].error = error;
-        DJmotor[i].valSet.current_raw = 0;
+        DJmotor[i].valSet.current_raw = 0U;
         DJmotor[i].valSet.angle_deg = 0.0f;
-        DJmotor[i].valSet.speed_rpm = 0;
+        DJmotor[i].valSet.speed_rpm = 0U;
         DJmotor[i].valSet.PulseTotal = 0;
         DJmotor[i].valNow.PulseTotal = 0;
         DJmotor[i].valPre.PulseRead = 0;
@@ -73,12 +73,12 @@ void DJmotor_Init(void){
 
     for (uint32_t i = 0; i < M3508_NUM; i++){
         DJmotor[i + M2006_NUM].ID = (uint8_t)(i + 1U + M2006_NUM);
-        DJmotor[i + M3508_NUM].param = dj3508_param;
+        DJmotor[i + M2006_NUM].param = dj3508_param;
     }
 
     for (uint32_t i = 0; i < USE_DJNUM; i++){
-        PID_Init(&DJmotor[i].posPID, 1.0f, 1.0f, 0.0f, PIDPOS);
-        PID_Init(&DJmotor[i].velPID, 1.0f, 1.0f, 1.0f, PIDINC);
+        PID_Init(&DJmotor[i].posPID, 0.8f, 0.045f, 0.0f, PIDPOS);
+        PID_Init(&DJmotor[i].velPID, 1.0f, 0.03f, 0.0f, PIDINC);
     }
 }
 
@@ -178,7 +178,8 @@ void DJmotor_Func(void){
         }else{
             DJmotor[i].valSet.current_raw = 0;
         }
-    }
+    DJmotor_CurrentTransmit(&DJmotor[i]);
+		}
 }
 
 void DJmotor_SpeedMode(DJMotorPointer motor){
@@ -201,6 +202,7 @@ void DJmotor_PositionMode(DJMotorPointer motor){
     motor->valSet.PulseTotal = (int32_t)(
         motor->valSet.angle_deg * 
         motor->param.Gear_ratio * 
+        motor->param.Reduction_ratio *
         (float)motor->param.PulsePerRound / 360.0f
     );
 

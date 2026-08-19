@@ -54,6 +54,34 @@ void MX_CAN1_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN CAN1_Init 2 */
+  CAN_FilterTypeDef CAN_FilterConfig;
+  // 定义过滤器
+
+  // 下面是设置过滤器一的配置。有几个过滤器就写几套
+  CAN_FilterConfig.FilterActivation = ENABLE;                // 激活过滤器
+  // CAN_FilterConfig.SlaveStartFilterBank = 14;                // CAN1和CAN2的过滤器分割线，0-13给CAN1，14-27给CAN2
+  CAN_FilterConfig.FilterBank = 0;                           // 使用第10个筛选器组
+  CAN_FilterConfig.FilterScale = CAN_FILTERSCALE_16BIT;      // 位宽
+  CAN_FilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;       // 模式（列表/掩码）
+  CAN_FilterConfig.FilterFIFOAssignment = CAN_FILTER_FIFO0;  // 用哪个FIFO的信箱
+  // 将ID和掩码全部设为0，表示不检查任何位，所有报文都通过
+  CAN_FilterConfig.FilterIdHigh = 0x0000;
+  CAN_FilterConfig.FilterIdLow = 0x0000;
+  CAN_FilterConfig.FilterMaskIdHigh = 0x0000;
+  CAN_FilterConfig.FilterMaskIdLow = 0x0000;
+  if (HAL_CAN_ConfigFilter(&hcan1, &CAN_FilterConfig) != HAL_OK){
+    Error_Handler();
+  }
+
+  if (HAL_CAN_Start(&hcan1) != HAL_OK){
+    Error_Handler();
+  }
+  if (HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK){
+    Error_Handler();
+  }
+  // if (HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO1_MSG_PENDING) != HAL_OK){
+  //   Error_Handler();
+  // }
 
   /* USER CODE END CAN1_Init 2 */
 

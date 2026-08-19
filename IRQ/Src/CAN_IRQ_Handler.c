@@ -8,13 +8,13 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
         if (
             RxHeader.IDE != CAN_ID_STD || 
             RxHeader.RTR != CAN_RTR_DATA || 
-            RxHeader.StdId < 200U || 
-            RxHeader.StdId > 208U
+            RxHeader.StdId < 0x200U || 
+            RxHeader.StdId > 0x208U
         ){
             return ;
         }
 
-        uint8_t card_id = (uint8_t)(RxHeader.StdId - 200U);
+        uint8_t card_id = (uint8_t)(RxHeader.StdId - 0x200U);
 
         if (card_id > USE_DJNUM){
             return ;
@@ -22,7 +22,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
 
         DJMotorPointer motor = &DJmotor[card_id - 1U];
         // motor->ID = card_id;
-        motor->Begin = true;
+        // motor->Begin = true;
 
         motor->valNow.PulseRead = (int16_t)(((uint16_t)RxData[0] << 8) | RxData[1]);
         motor->valNow.speed_rpm = (int16_t)(((uint16_t)RxData[2] << 8) | RxData[3]);
@@ -46,7 +46,6 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
 }
 
 void DJmotor_CurrentTransmit(DJMotorPointer motor){
-    // 小困惑：motor->ID究竟是什么时候被赋值的？还是说主循环会遍历一遍所有的ID？
     static uint8_t Tx_Data[8] = {0};
     CAN_TxHeaderTypeDef TxHeader;
     uint8_t tag = 0;

@@ -1,4 +1,4 @@
-/* USER CODE BEGIN Header */
+ /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
   * @file           : main.h
@@ -31,7 +31,7 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "motor.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/

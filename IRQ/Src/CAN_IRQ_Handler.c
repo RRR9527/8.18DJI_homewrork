@@ -42,7 +42,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
     }
 }
 
-void DJmotor_CurrentTransmit(DJMotorPointer motor, CAN_HandleTypeDef *hcan){
+void DJmotor_CurrentTransmit(DJMotorPointer motor){
     // 小困惑：motor->ID究竟是什么时候被赋值的？还是说主循环会遍历一遍所有的ID？
     static uint8_t Tx_Data[8] = {0};
     CAN_TxHeaderTypeDef TxHeader;
@@ -66,6 +66,6 @@ void DJmotor_CurrentTransmit(DJMotorPointer motor, CAN_HandleTypeDef *hcan){
     Tx_Data[tag + 1] = (uint8_t)(motor->valSet.current_raw & 0xFF);
 
     if (motor->ID == 4U || motor->ID == 8U){
-        HAL_CAN_AddTxMessage(&hcan, &TxHeader, Tx_Data, &TxMailbox);
+        HAL_CAN_AddTxMessage(&hcan1, &TxHeader, Tx_Data, &TxMailbox);
     }
 }

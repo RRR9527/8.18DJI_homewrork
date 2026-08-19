@@ -1,5 +1,7 @@
 #include "motor.h"
 
+DJMotor DJmotor[USE_DJNUM];
+
 void DJmotor_Init(void){
     DJmotorParam dj2006_param;
     DJmotorParam dj3508_param;
@@ -8,7 +10,6 @@ void DJmotor_Init(void){
     DJmotorArgum argum;
     DJmotorError error;
 
-    DJMotor DJmotor[USE_DJNUM];
 
     dj2006_param.ParamID = 0x1FFU;
     dj2006_param.Gear_ratio = 1.0f;
@@ -102,11 +103,183 @@ void DJmotor_AngleCalculate(DJMotorPointer motor){  // 注意，这里传入的�
     }
 
     if (motor->statusFlag.IsSetZero){
-        DJmotor_SetZero(motor);
+        DJmotor_SetZero(motor);  // 记得填坑
         motor->statusFlag.IsSetZero = false;
     }
 
     motor->valPre = motor->valNow;
 }
 
+void DJmotor_Func(void){
+    for (uint32_t i = 0; i < USE_DJNUM; i++){
+        if (DJmotor[i].Begin){
+            DJmotor_SwitchMode(&DJmotor[i]);
 
+            switch (DJmotor[i].MODE_Cur){
+                case DJ_Disable:{
+                    DJmotor[i].valSet.current_raw = 0;
+                    DJmotor_CurrentTransmit(&DJmotor[i]);
+                    continue;
+                    break;
+                }
+
+                case DJ_RPM:{
+                    DJmotor_SpeedMode(&DJmotor[i]);
+                    break;
+                }
+
+                case DJ_Position:{
+                    DJmotor_PositionMode(&DJmotor[i]);
+                    break;
+                }
+
+                case DJ_Zero:{
+                    DJmotor_ZeroMode(&DJmotor[i]);
+                    break;
+                }
+
+                case DJ_Current:{
+                    ClampPeak(DJmotor[i].valSet.current_raw, DJmotor[i].param.CurrentLimit_raw);
+                    break;
+                }
+
+                defualt :{
+                    break;
+                }
+            }
+        }else{
+            DJmotor[i].valSet.current_raw = 0;
+        }
+
+        DJmotor_CurrentTransmit(&DJmotor[i]);
+    }
+}
+
+static void DJmotor_SwitchMode(DJMotorPointer motor){
+    if (motor->MODE_Set != motor->MODE_Cur){
+        motor->MODE_Cur = motor->MODE_Set;
+        motor->valSet.current_raw = 0;
+        motor->valSet.speed_rpm = 0;
+        motor->valSet.angle_deg = motor->valNow.angle_deg;
+        // 清除历史残值
+        PID_Reset(&motor->posPID);
+        PID_Reset(&motor->velPID);
+        motor->statusFlag.ZeroFlag = false;
+        motor->statusFlag.Overtimeflag = false;
+        motor->statusFlag.StuckFlag = false;
+    }
+}
+
+void DJmotor_SpeedMode(DJMotorPointer motor){
+    motor->velPID.SetVal = (float)motor->valSet.speed_rpm * 
+                            motor->param.Gear_ratio * 
+                            motor->param.Reduction_ratio;
+    motor->velPID.CurVal = (float)motor->valNow.speed_rpm * 
+                            motor->param.Gear_ratio * 
+                            motor->param.Reduction_ratio;
+
+    if (motor->limit.RPMLimitFlag){
+        ClampPeak(motor->velPID.SetVal, motor->limit.SpeedRPMLimit);
+    }
+
+    motor->valSet.current_raw += PID_calculate(&motor->velPID);
+    ClampPeak(motor->valSet.current_raw, motor->param.CurrentLimit_raw);
+}
+
+void DJmotor_PositionMode(DJMotorPointer motor){
+    motor->valSet.PulseTotal = (int32_t)(
+        motor->valSet.angle_deg * 
+        motor->param.Gear_ratio * 
+        (float)motor->param.PulsePerRound / 360.0f
+    );
+
+    motor->posPID.SetVal = (float)motor->valSet.PulseTotal;
+    if (motor->limit.PosAngleLimitFlag){
+        const int32_t max_pulse = (int32_t)(
+            motor->limit.MaxAngle_deg * 
+            (float)motor->param.PulsePerRound * 
+            motor->param.Gear_ratio * 
+            motor->param.Reduction_ratio / 360.0f
+        );
+
+        const int32_t min_pulse = (int32_t)(
+            motor->limit.MinAngle_deg * 
+            (float)motor->param.PulsePerRound * 
+            motor->param.Gear_ratio * 
+            motor->param.Reduction_ratio / 360.0f
+        );
+
+        motor->posPID.SetVal = Clamp(motor->valSet.PulseTotal, min_pulse, max_pulse);
+    }
+
+    motor->posPID.CurVal = (float)motor->valNow.PulseTotal;
+
+    motor->velPID.SetVal = PID_calculate(&motor->posPID);
+    motor->velPID.CurVal = (float)motor->valNow.speed_rpm * 
+                           motor->param.Gear_ratio * 
+                           motor->param.Reduction_ratio;
+    
+    if (motor->limit.PosRPMFlag){
+        ClampPeak(motor->velPID.SetVal, motor->limit.PosRPMLimit);
+    }
+
+    motor->valSet.current_raw += PID_calculate(&motor->velPID);
+    ClampPeak(motor->valSet.current_raw, motor->param.CurrentLimit_raw);
+}
+
+void DJmotor_ZeroMode(DJMotorPointer motor){
+    motor->velPID.SetVal = (float)motor->limit.ZeroRPMLimit;
+    motor->velPID.CurVal = (float)motor->valNow.speed_rpm;
+    motor->valSet.current_raw += PID_calculate(&motor->velPID);
+    ClampPeak(motor->valSet.current_raw, motor->limit.ZeroCurrentLimit_raw);
+
+    if (abs(motor->valNow.PulseGap) < Zero_Distance){
+        if (motor->argum.zeroCnt ++ > 100U){
+            motor->argum.zeroCnt = 0;
+            motor->statusFlag.ZeroFlag = true;
+            motor->Begin = false;
+
+            PID_Reset(&motor->posPID);
+            PID_Reset(&motor->velPID);
+            DJmotor_SetZero(motor);  // 记得填坑
+        }
+    }
+}
+
+void DJmotor_SetZero(DJMotorPointer motor){
+    motor->valNow.PulseTotal = 0;
+}
+
+static void DJmotor_Monitor(DJMotorPointer motor){
+    if(motor->valNow.PulseGap < 5 && motor->valNow.current_raw > 3000){
+        if (motor->error.stuckCount++ > 500U){
+            motor->error.stuckCount = 0;
+            motor->statusFlag.StuckFlag = true;
+            if (motor->limit.IsLooseStuck){
+                motor->MODE_Set = DJ_Disable;
+            }
+        }
+    }else{
+        motor->error.stuckCount = 0;
+    }
+
+    if (motor->error.lastRxTime++ > 50U){
+        if (motor->error.timeoutCount++ > 20U){
+            motor->error.timeoutCount = 0;
+            motor->MODE_Set = DJ_Disable;
+            motor->statusFlag.Overtimeflag = true;
+        }
+    }
+}
+
+int32_t Clamp(int32_t x, int32_t min, int32_t max){
+    if (x > max){
+        return max;
+    }
+
+    if (x < min){
+        return min;
+    }
+
+    return x;
+}

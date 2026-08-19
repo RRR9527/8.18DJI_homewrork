@@ -4,6 +4,8 @@
 #include "main.h"
 #include <stdbool.h>
 #include <stdlib.h>
+#include "CAN_IRQ_Handler.h"
+#include "PID_Handler.h"
 
 typedef enum{
     DJ_Disable  = 0,  // 失能状态
@@ -55,7 +57,7 @@ typedef struct{
 
 typedef struct{
     /*其实我也不知这些数据有多大，有无符号。先定义成这样，后面报错了再说*/
-    int8_t pulselock;
+    int32_t pulselock;
     int8_t zeroCnt;
     int8_t GapCnt;
 } DJmotorArgum;  // 我也不知道这些是干什么的 
@@ -72,7 +74,7 @@ typedef struct{
     float Kp;
     float Ki;
     float Kd;
-    float err[2];  // 什么含义取决于什么模式
+    float err[3];  // 什么含义取决于什么模式
     float SetVal;  // 输入量，设定值
     float CurVal;  // 当前量
     float output;  // 计算结果
@@ -103,12 +105,14 @@ typedef struct{
 #define USE_DJNUM 8U  // 使用的电机的数量（假设一共八个2006和3508各4个）
 #define M2006_NUM 4U  // 2006型号
 #define M3508_NUM 4U  // 3508型号
+#define Zero_Distance 10U
 
 #define GetSign(x) ((x > 0) - (x < 0))
+#define ClampPeak(raw, limit) if(raw > limit){raw = limit;}else if(raw < -limit){raw = -limit;}
 
 float PID_Init(PIDType *pid, float Kp, float Ki, float Kd, uint8_t mode);
 void DJmotor_Init(void);
-void DJmotor_AngleCalculate(DJMotorPointer motor)
+void DJmotor_AngleCalculate(DJMotorPointer motor);
 
 #if USE_DJ
     extern DJMotor DJmotor[USE_DJNUM];

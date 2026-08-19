@@ -41,3 +41,11 @@ float PID_calculate(PIDType *pid){
 
     return pid->output;
 }
+
+void PID_Reset(PIDType *pid){
+    pid->CurVal = 0;
+    pid->SetVal = 0;
+    for (uint8_t i = 0; i < 3; i++){
+        pid->err[i] = 0;
+    }    
+}

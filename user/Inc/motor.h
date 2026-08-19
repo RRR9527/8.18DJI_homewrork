@@ -108,6 +108,7 @@ typedef struct{
 
 float PID_Init(PIDType *pid, float Kp, float Ki, float Kd, uint8_t mode);
 void DJmotor_Init(void);
+void DJmotor_AngleCalculate(DJMotorPointer motor)
 
 #if USE_DJ
     extern DJMotor DJmotor[USE_DJNUM];

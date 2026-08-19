@@ -6,4 +6,6 @@
 
 extern DJMotor DJmotor[USE_DJNUM];
 
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan);
+
 #endif

@@ -179,7 +179,7 @@ void DJmotor_Func(void){
             DJmotor[i].valSet.current_raw = 0;
         }
     DJmotor_CurrentTransmit(&DJmotor[i]);
-		}
+	}
 }
 
 void DJmotor_SpeedMode(DJMotorPointer motor){
